@@ -2,7 +2,7 @@
 <html lang="en-IN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>SG Electronics – Service Portal</title>
 <meta name="theme-color" content="#6d28d9">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,6 +83,17 @@
         await updateDoc(doc(db, 'users', id), data);
         return true;
       } catch(e) { console.error('FB updateUser:', e); return false; }
+    },
+    
+    // Find user by email directly from Firebase (for cross-device login)
+    async findUserByEmail(email) {
+      try {
+        const { query: q, where, getDocs: gd } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        // Get all users and filter (simple approach for small datasets)
+        const snap = await getDocs(collection(db, 'users'));
+        const users = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        return users.find(u => u.email === email) || null;
+      } catch(e) { console.error('FB findUser:', e); return null; }
     },
     
     // ── TECHNICIANS ──
@@ -307,7 +318,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
 
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;transition:.2s;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:11px;font-weight:700;font-size:13px;border:none;cursor:pointer;transition:.2s;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}
 .btn-primary{background:var(--p);color:#fff;box-shadow:0 3px 12px rgba(109,40,217,.3)}
 .btn-primary:hover{background:#5b21b6;transform:translateY(-1px);box-shadow:0 5px 18px rgba(109,40,217,.4)}
 .btn-accent{background:var(--acc);color:#fff;box-shadow:0 3px 12px rgba(249,115,22,.25)}
@@ -368,7 +379,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .form-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em;text-transform:uppercase}
-.form-control{width:100%;padding:11px 13px;background:var(--card);border:1.5px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;transition:.2s;outline:none}
+.form-control{width:100%;padding:13px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:11px;color:var(--text);font-size:16px;font-family:'Plus Jakarta Sans',sans-serif;transition:.2s;outline:none;-webkit-appearance:none;appearance:none}
 .form-control:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(109,40,217,.1)}
 .form-control::placeholder{color:#c4b5fd}
 select.form-control option{background:var(--card);color:var(--text)}
@@ -394,11 +405,12 @@ textarea.form-control{resize:vertical;min-height:80px}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(30,27,75,.4);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:20px}
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(30,27,75,.4);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal-overlay.open{display:flex;animation:fadeIn .2s ease}
-.modal-sheet{width:100%;max-width:520px;background:var(--card);border:1.5px solid var(--border);border-radius:22px 22px 14px 14px;padding:8px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease;box-shadow:0 -8px 40px rgba(109,40,217,.1)}
+.modal-sheet{width:100%;max-width:520px;background:var(--card);border:1.5px solid var(--border);border-radius:22px 22px 0 0;padding:8px 0 0;max-height:95vh;overflow-y:auto;animation:slideUp .3s ease;box-shadow:0 -8px 40px rgba(109,40,217,.1);margin-top:auto;padding-bottom:env(safe-area-inset-bottom,20px)}
+@supports(height:100dvh){.modal-overlay{max-height:100dvh}}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
-.modal-inner{padding:4px 22px 26px}
+.modal-inner{padding:4px 22px 30px;padding-bottom:max(30px,env(safe-area-inset-bottom,30px))}
 .modal-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--text)}
 .detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);gap:14px}
 .detail-row:last-child{border-bottom:none}
@@ -864,8 +876,8 @@ textarea.form-control{resize:vertical;min-height:65px}
   <div class="login-card">
     <div class="login-logo">SG<span>Electronics</span></div>
     <div class="login-sub">Admin Dashboard &middot; Sign In</div>
-    <div class="form-group"><div class="form-label">Username</div><input class="form-control" id="liUserA" type="text" placeholder="Enter username" autocomplete="username"></div>
-    <div class="form-group"><div class="form-label">Password</div><input class="form-control" id="liPwdA" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')Admin.doLogin()"></div>
+    <div class="form-group"><div class="form-label">Username</div><input class="form-control" id="liUserA" type="text" inputmode="text" autocomplete="username" autocorrect="off" autocapitalize="none" placeholder="Enter username"></div>
+    <div class="form-group"><div class="form-label">Password</div><input class="form-control" id="liPwdA" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')Admin.doLogin()"></div>
     <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="Admin.doLogin()">Sign In &rarr;</button>
     <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px;color:#6b7280" onclick="Portal._goBackFromAdmin()">&larr; Back</button>
   </div>
@@ -959,8 +971,8 @@ textarea.form-control{resize:vertical;min-height:65px}
     <div class="login-logo">SG<span>Electronics</span></div>
     <div class="login-sub">Technician Portal</div>
     <div style="text-align:center;margin-bottom:24px"><span class="login-badge">&#128295; Staff Login</span></div>
-    <div class="form-group"><div class="form-label">Username</div><input class="form-control" id="liUserT" placeholder="Your username" autocomplete="username"></div>
-    <div class="form-group"><div class="form-label">Password</div><input class="form-control" id="liPwdT" type="password" placeholder="Your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')Tech.doLogin()"></div>
+    <div class="form-group"><div class="form-label">Username</div><input class="form-control" id="liUserT" type="text" inputmode="text" autocomplete="username" autocorrect="off" autocapitalize="none" placeholder="Your username"></div>
+    <div class="form-group"><div class="form-label">Password</div><input class="form-control" id="liPwdT" type="password" autocomplete="current-password" placeholder="Your password" onkeydown="if(event.key==='Enter')Tech.doLogin()"></div>
     <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="Tech.doLogin()">Sign In &rarr;</button>
     <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px;color:#6b7280" onclick="Portal._goBackFromTech()">&larr; Back</button>
   </div>
@@ -1034,7 +1046,16 @@ const FBSync = {
         if(loaded) {
           initData();
           const portal = new URLSearchParams(window.location.search).get('portal');
-          if(!portal || portal==='customer') { App.init && App.init(); }
+          if(!portal || portal==='customer') {
+            // Re-validate current user session with fresh Firebase data
+            const savedUser = DB.get('currentUser');
+            if(savedUser) {
+              const users = DB.get('users') || [];
+              const fresh = users.find(u => u.id === savedUser.id);
+              if(fresh) { DB.set('currentUser', fresh); }
+            }
+            App.init && App.init();
+          }
         }
         this._queue.forEach(fn => fn());
         this._queue = [];
@@ -1156,9 +1177,9 @@ function initData(){
   }
   if(!DB.get('technicians')){
     DB.set('technicians',[
-      // {id:'tech_1',name:'Ravi Kumar',phone:'+91 9876500001',specialty:'AC & Refrigerator',username:'ravi',password:'ravi123',status:'available'},
-      // {id:'tech_2',name:'Suresh M',phone:'+91 9876500002',specialty:'Washing Machine & TV',username:'suresh',password:'suresh123',status:'available'},
-      // {id:'tech_3',name:'Karthik S',phone:'+91 9876500003',specialty:'Water Purifier & Geyser',username:'karthik',password:'karthik123',status:'available'},
+      {id:'tech_1',name:'Ravi Kumar',phone:'+91 9876500001',specialty:'AC & Refrigerator',username:'ravi',password:'ravi123',status:'available'},
+      {id:'tech_2',name:'Suresh M',phone:'+91 9876500002',specialty:'Washing Machine & TV',username:'suresh',password:'suresh123',status:'available'},
+      {id:'tech_3',name:'Karthik S',phone:'+91 9876500003',specialty:'Water Purifier & Geyser',username:'karthik',password:'karthik123',status:'available'},
     ]);
   }
 }
@@ -1319,7 +1340,17 @@ const App={
 
   init(){
     initData();
-    this.user=DB.get('currentUser');
+    // Restore session - check if still valid
+    const savedUser = DB.get('currentUser');
+    if(savedUser && savedUser.id) {
+      // Validate user still exists
+      const users = DB.get('users') || [];
+      const stillValid = users.find(u => u.id === savedUser.id);
+      this.user = stillValid ? savedUser : null;
+      if(!stillValid) DB.set('currentUser', null);
+    } else {
+      this.user = null;
+    }
     this.updateNav();
     this.render('home');
   },
@@ -1832,66 +1863,167 @@ const App={
     document.getElementById('modalInner').innerHTML=`
       <div class="modal-title">Welcome Back 👋</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Sign in to manage your requests</div>
-      <div class="form-group"><div class="form-label">Email Address</div><input class="form-control" id="liEmail" type="email" value="customer@sgelectronics.in"></div>
-      <div class="form-group"><div class="form-label">Password</div><input class="form-control" id="liPwd" type="password" value="customer123"></div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Demo: customer@sgelectronics.in / customer123</div>
-      <button class="btn btn-primary btn-full" onclick="App.doLogin(${redirect},'${redirectPage}')">Sign In →</button>
+      <div class="form-group">
+        <div class="form-label">Email Address</div>
+        <input class="form-control" id="liEmail" type="email" inputmode="email" autocomplete="email" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Password</div>
+        <input class="form-control" id="liPwd" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter'){event.preventDefault();App.doLogin(${redirect},'${redirectPage}')}">
+      </div>
+      <div id="loginError" style="display:none;font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;margin-bottom:12px"></div>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="App.doLogin(${redirect},'${redirectPage}')">Sign In →</button>
       <div class="divider">or</div>
-      <button class="btn btn-ghost btn-full" onclick="App.showSignup()">Create new account</button>
+      <button class="btn btn-ghost btn-full" onclick="App.showSignup()">Create New Account</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Demo: <strong>customer@sgelectronics.in</strong> / <strong>customer123</strong></div>
     `;
     document.getElementById('modal').classList.add('open');
+    setTimeout(()=>{const el=document.getElementById('liEmail');if(el)el.focus();},350);
   },
-
-  doLogin(redirect=false,redirectPage=''){
-    const email=document.getElementById('liEmail')?.value.trim();
+  async doLogin(redirect=false,redirectPage=''){
+    const email=document.getElementById('liEmail')?.value.trim().toLowerCase();
     const pwd=document.getElementById('liPwd')?.value;
-    const users=DB.get('users')||[];
-    const u=users.find(x=>x.email===email&&x.password===pwd);
-    if(!u){toast('Invalid email or password','error');return;}
+    if(!email||!pwd){this._loginError('Please enter email and password');return;}
+    
+    const btn=document.getElementById('loginBtn');
+    if(btn){btn.disabled=true;btn.textContent='Signing in…';}
+    
+    // Step 1: Check localStorage first (fast, works offline)
+    let users=DB.get('users')||[];
+    let u=users.find(x=>x.email?.toLowerCase()===email&&x.password===pwd);
+    
+    // Step 2: If not found locally, try Firebase directly (cross-device login)
+    if(!u && window._fb){
+      try {
+        const fbUsers = await window._fb.getUsers();
+        if(fbUsers && fbUsers.length > 0) {
+          // Update local cache with Firebase data
+          DB.set('users', fbUsers);
+          u = fbUsers.find(x=>x.email?.toLowerCase()===email&&x.password===pwd);
+        }
+      } catch(e) { console.error('Firebase login check:', e); }
+    }
+    
+    if(btn){btn.disabled=false;btn.textContent='Sign In →';}
+    
+    if(!u){this._loginError('Invalid email or password. Please check and try again.');return;}
     this.user=u;
     DB.set('currentUser',u);
     this.updateNav();
     document.getElementById('modal').classList.remove('open');
-    toast(`Welcome back, ${u.name.split(' ')[0]}! 👋`);
+    toast('Welcome back, '+u.name.split(' ')[0]+'! 👋');
     if(redirect&&redirectPage) this.nav(redirectPage);
     else this.render('home');
+  },
+  
+  _loginError(msg){
+    const el=document.getElementById('loginError');
+    if(el){el.textContent=msg;el.style.display='block';}
+    else toast(msg,'error');
   },
 
   showSignup(){
     document.getElementById('modalInner').innerHTML=`
       <div class="modal-title">Create Account</div>
-      <div class="form-group"><div class="form-label">Full Name *</div><input class="form-control" id="suName" placeholder="Your full name"></div>
-      <div class="form-group"><div class="form-label">Email Address *</div><input class="form-control" id="suEmail" type="email" placeholder="your@email.com"></div>
-      <div class="form-group"><div class="form-label">Phone Number *</div><input class="form-control" id="suPhone" type="tel" placeholder="+91 9876543210"></div>
-      <div class="form-group"><div class="form-label">Password *</div><input class="form-control" id="suPwd" type="password" placeholder="Create password"></div>
-      <div class="form-group"><div class="form-label">Confirm Password *</div><input class="form-control" id="suPwd2" type="password" placeholder="Repeat password"></div>
-      <button class="btn btn-primary btn-full" onclick="App.doSignup()">Create Account →</button>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Join SG Electronics for fast service</div>
+      <div class="form-group">
+        <div class="form-label">Full Name *</div>
+        <input class="form-control" id="suName" type="text" inputmode="text" autocomplete="name" autocapitalize="words" placeholder="Your full name">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Email Address *</div>
+        <input class="form-control" id="suEmail" type="email" inputmode="email" autocomplete="email" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Phone Number *</div>
+        <input class="form-control" id="suPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 9876543210">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Password *</div>
+        <input class="form-control" id="suPwd" type="password" autocomplete="new-password" placeholder="Create a strong password">
+      </div>
+      <div class="form-group">
+        <div class="form-label">Confirm Password *</div>
+        <input class="form-control" id="suPwd2" type="password" autocomplete="new-password" placeholder="Repeat password" onkeydown="if(event.key==='Enter'){event.preventDefault();App.doSignup()}">
+      </div>
+      <div id="signupError" style="display:none;font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;margin-bottom:12px"></div>
+      <button class="btn btn-primary btn-full" id="signupBtn" onclick="App.doSignup()">Create Account →</button>
       <div class="divider">already have an account?</div>
       <button class="btn btn-ghost btn-full" onclick="App.showLogin()">Sign In</button>
     `;
     document.getElementById('modal').classList.add('open');
+    setTimeout(()=>{const el=document.getElementById('suName');if(el)el.focus();},350);
   },
-
-  doSignup(){
+  async doSignup(){
     const name=document.getElementById('suName')?.value.trim();
-    const email=document.getElementById('suEmail')?.value.trim();
+    const email=document.getElementById('suEmail')?.value.trim().toLowerCase();
     const phone=document.getElementById('suPhone')?.value.trim();
     const pwd=document.getElementById('suPwd')?.value;
     const pwd2=document.getElementById('suPwd2')?.value;
-    if(!name||!email||!phone||!pwd){toast('All fields required','error');return;}
-    if(pwd!==pwd2){toast('Passwords do not match','error');return;}
-    const users=DB.get('users')||[];
-    if(users.some(u=>u.email===email)){toast('Email already registered','error');return;}
-    const newUser={id:DB.uid('cust'),name,email,phone,password:pwd,role:'customer',address:'',createdAt:new Date().toISOString()};
+    
+    if(!name||!email||!phone||!pwd){this._signupError('Please fill all required fields');return;}
+    if(pwd!==pwd2){this._signupError('Passwords do not match');return;}
+    if(pwd.length<6){this._signupError('Password must be at least 6 characters');return;}
+    
+    const btn=document.getElementById('signupBtn');
+    if(btn){btn.disabled=true;btn.textContent='Creating account…';}
+    
+    // Check localStorage first
+    let users=DB.get('users')||[];
+    if(users.some(u=>u.email?.toLowerCase()===email)){
+      this._signupError('Email already registered. Please sign in instead.');
+      if(btn){btn.disabled=false;btn.textContent='Create Account →';}
+      return;
+    }
+    
+    // Also check Firebase to prevent duplicate across devices
+    if(window._fb){
+      try {
+        const fbUsers = await window._fb.getUsers();
+        if(fbUsers && fbUsers.some(u=>u.email?.toLowerCase()===email)){
+          // Update local cache
+          DB.set('users', fbUsers);
+          this._signupError('Email already registered. Please sign in instead.');
+          if(btn){btn.disabled=false;btn.textContent='Create Account →';}
+          return;
+        }
+        if(fbUsers && fbUsers.length > 0) {
+          users = fbUsers; // Use fresh Firebase data
+          DB.set('users', fbUsers);
+        }
+      } catch(e) { console.error('Firebase check:', e); }
+    }
+    
+    const newUser={
+      id:DB.uid('cust'),
+      name,
+      email,
+      phone,
+      password:pwd,
+      role:'customer',
+      address:'',
+      createdAt:new Date().toISOString()
+    };
     users.push(newUser);
     DB.set('users',users);
-    FBSync.saveUser(newUser);
+    
+    // Save to Firebase (await to ensure cross-device availability)
+    if(window._fb){
+      try { await window._fb.saveUser(newUser); } catch(e){ console.error('Firebase save user:', e); }
+    }
+    
     this.user=newUser;
     DB.set('currentUser',newUser);
     this.updateNav();
     document.getElementById('modal').classList.remove('open');
-    toast('Account created! Welcome 🎉');
+    toast('Account created! Welcome '+name.split(' ')[0]+' 🎉');
     this.render('dashboard');
+  },
+  
+  _signupError(msg){
+    const el=document.getElementById('signupError');
+    if(el){el.textContent=msg;el.style.display='block';}
+    else toast(msg,'error');
   },
 
   logout(){
