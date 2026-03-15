@@ -8,6 +8,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Firebase SDK -->
+<!-- SG Electronics Logo Patch -->
+<script>
+(function(){
+var LU="sg.png";
+function mLogo(h,s){return'<img src="'+LU+'" alt="SG Electronics" style="height:'+h+'px;width:auto;border-radius:'+Math.round(h*.22)+'px;display:inline-block;vertical-align:middle;'+(s||'')+'">';}
+(function(){var l=document.createElement('link');l.rel='icon';l.type='image/png';l.href=LU;document.head.appendChild(l);})();
+function patch(){
+  var pl=document.querySelector('.portal-logo');
+  if(pl&&!pl._sg){pl._sg=1;pl.style.textAlign='center';pl.innerHTML='<img src="'+LU+'" style="height:72px;width:auto;border-radius:16px;box-shadow:0 8px 32px rgba(109,40,217,.5);display:block;margin:0 auto 14px"><div style="font-size:22px;font-weight:800;color:#a78bfa">SG<span style="color:#f97316">Electronics</span></div>';}
+  document.querySelectorAll('#customerModule .logo,#techModule .logo').forEach(function(el){if(!el._sg){el._sg=1;el.style.cssText+='display:flex;align-items:center;gap:8px';el.innerHTML=mLogo(30)+'<span style="font-size:18px;font-weight:800;color:var(--p)">SG<span style="color:var(--acc)">Electronics</span></span>';}});
+  var sb=document.querySelector('.sb-logo-text');if(sb&&!sb._sg){sb._sg=1;sb.style.display='flex';sb.style.alignItems='center';sb.innerHTML=mLogo(24,'margin-right:8px')+'SG<span>Electronics</span><span class="sb-badge">Admin</span>';}
+  var al=document.querySelector('#adminLoginScreen .login-logo');if(al&&!al._sg){al._sg=1;al.style.textAlign='center';al.innerHTML='<img src="'+LU+'" style="height:64px;width:auto;border-radius:13px;box-shadow:0 6px 24px rgba(79,70,229,.3);display:block;margin:0 auto 10px">SG<span>Electronics</span>';}
+  var tl=document.querySelector('#techLoginScreen .login-logo');if(tl&&!tl._sg){tl._sg=1;tl.style.textAlign='center';tl.innerHTML='<img src="'+LU+'" style="height:58px;width:auto;border-radius:12px;box-shadow:0 6px 20px rgba(13,148,136,.3);display:block;margin:0 auto 10px">SG<span>Electronics</span>';}
+}
+patch();new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});setInterval(patch,800);
+})();
+</script>
+
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, setDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1177,9 +1196,9 @@ function initData(){
   }
   if(!DB.get('technicians')){
     DB.set('technicians',[
-      {id:'tech_1',name:'Ravi Kumar',phone:'+91 9876500001',specialty:'AC & Refrigerator',username:'ravi',password:'ravi123',status:'available'},
-      {id:'tech_2',name:'Suresh M',phone:'+91 9876500002',specialty:'Washing Machine & TV',username:'suresh',password:'suresh123',status:'available'},
-      {id:'tech_3',name:'Karthik S',phone:'+91 9876500003',specialty:'Water Purifier & Geyser',username:'karthik',password:'karthik123',status:'available'},
+      // {id:'tech_1',name:'Ravi Kumar',phone:'+91 9876500001',specialty:'AC & Refrigerator',username:'ravi',password:'ravi123',status:'available'},
+      // {id:'tech_2',name:'Suresh M',phone:'+91 9876500002',specialty:'Washing Machine & TV',username:'suresh',password:'suresh123',status:'available'},
+      // {id:'tech_3',name:'Karthik S',phone:'+91 9876500003',specialty:'Water Purifier & Geyser',username:'karthik',password:'karthik123',status:'available'},
     ]);
   }
 }
