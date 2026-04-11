@@ -1188,6 +1188,7 @@ function initData(){
   }
   if(!DB.get('admins')){
     DB.set('admins',[{id:'admin_1',username:'Vignesh',password:'vicky@sg',name:'Super Admin',role:'admin',createdAt:new Date().toISOString()}]);
+    DB.set('admins',[{id:'admin_1',username:'guna',password:'guna@sg',name:'Super Admin',role:'admin',createdAt:new Date().toISOString()}]);
   } else {
     const admins=DB.get('admins')||[];
     let changed=false;
